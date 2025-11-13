@@ -20,6 +20,15 @@ profile.cov
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+# Frontend build artifacts
+web/node_modules/
+web/dist/
+
+# Logs and temp files
+*.log
+*.tmp
+*.pid
+
 # Go workspace file
 go.work
 go.work.sum
