@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Nubi Nginx Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 2rem;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      h1 {
+        margin-top: 0;
+      }
+      button {
+        background: #38bdf8;
+        color: #0f172a;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        margin-right: 1rem;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: bold;
+      }
+      button:hover {
+        background: #0ea5e9;
+      }
+      button:disabled {
+        background: #1e293b;
+        color: #475569;
+        cursor: not-allowed;
+      }
+      #output {
+        white-space: pre-wrap;
+        background: #1e293b;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-top: 2rem;
+        min-height: 8rem;
+      }
+      .actions {
+        margin-top: 1.5rem;
+      }
+      .status {
+        margin-top: 1.5rem;
+      }
+      a {
+        color: #38bdf8;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Nubi Nginx Control</h1>
+    <p>Trigger common nginx maintenance actions and view their responses.</p>
+
+    <div class="actions">
+      <button id="statusBtn">Check Status</button>
+      <button id="testBtn">Test Config</button>
+      <button id="reloadBtn">Reload</button>
+    </div>
+
+    <div class="status">
+      <strong>Last response:</strong>
+      <div id="output">Idle</div>
+    </div>
+
+    <p style="margin-top: 3rem; font-size: 0.9rem; color: #94a3b8">
+      These commands call the local API served by nubid. Ensure the daemon has
+      permissions to reach your nginx binary.
+    </p>
+
+    <script>
+      const output = document.getElementById("output");
+      const statusBtn = document.getElementById("statusBtn");
+      const testBtn = document.getElementById("testBtn");
+      const reloadBtn = document.getElementById("reloadBtn");
+
+      async function callApi(path, options) {
+        output.textContent = "Working...";
+        statusBtn.disabled = true;
+        testBtn.disabled = true;
+        reloadBtn.disabled = true;
+
+        try {
+          const response = await fetch(path, options);
+          const data = await response.json();
+          const pretty = JSON.stringify(data, null, 2);
+          output.textContent = pretty;
+        } catch (err) {
+          output.textContent = `Request failed: ${err.message}`;
+        } finally {
+          statusBtn.disabled = false;
+          testBtn.disabled = false;
+          reloadBtn.disabled = false;
+        }
+      }
+
+      statusBtn.addEventListener("click", () => callApi("/api/nginx/status"));
+      testBtn.addEventListener("click", () =>
+        callApi("/api/nginx/test", { method: "POST" })
+      );
+      reloadBtn.addEventListener("click", () =>
+        callApi("/api/nginx/reload", { method: "POST" })
+      );
+    </script>
+  </body>
+</html>
