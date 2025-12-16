@@ -2,7 +2,10 @@ module github.com/shsm0520/nubi
 
 go 1.21
 
-require github.com/gin-gonic/gin v1.10.0
+require (
+	github.com/gin-gonic/gin v1.10.0
+	github.com/gorilla/websocket v1.5.3
+)
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect
