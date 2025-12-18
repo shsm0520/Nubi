@@ -8,6 +8,10 @@
 *.so
 *.dylib
 
+# Project binaries
+nubi
+nubi-*
+
 # Test binary, built with `go test -c`
 *.test
 
