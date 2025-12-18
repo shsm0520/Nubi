@@ -235,7 +235,7 @@ export function DefaultRouteManager() {
   const getModeLabel = () => {
     switch (mode) {
       case "nginx_default":
-        return "Nginx Default (404)";
+        return "Nginx Default";
       case "custom_page":
         return "Custom HTML Page";
       case "error_code":
@@ -492,7 +492,7 @@ export function DefaultRouteManager() {
       )}
 
       {/* Actions */}
-      <div className="mt-6 flex gap-3">
+      {/* <div className="mt-6 flex gap-3">
         <button
           type="button"
           onClick={handleSave}
@@ -511,7 +511,7 @@ export function DefaultRouteManager() {
             Remove
           </button>
         )}
-      </div>
+      </div> */}
     </div>
   );
 }

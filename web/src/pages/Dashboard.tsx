@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { reloadNginx, testNginxConfig } from "@/api/nginx";
 import { getDefaultRoute, type DefaultRouteConfig } from "@/api/route";
 import { setMaintenance } from "@/api/maintenance";
+import { getHosts } from "@/api/hosts";
 import { useWebSocket } from "@/hooks/useWebSocket";
 
 // Format bytes to human readable string
@@ -59,6 +60,10 @@ export function Dashboard() {
   const [defaultRoute, setDefaultRoute] = useState<DefaultRouteConfig | null>(
     null
   );
+  const [hostCount, setHostCount] = useState<{
+    total: number;
+    enabled: number;
+  }>({ total: 0, enabled: 0 });
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [message, setMessage] = useState<{
@@ -75,6 +80,17 @@ export function Dashboard() {
     // Fetch default route config
     getDefaultRoute()
       .then(({ config }) => setDefaultRoute(config))
+      .catch(() => {});
+
+    // Fetch host count
+    getHosts()
+      .then((data) => {
+        const hosts = data.hosts || [];
+        setHostCount({
+          total: hosts.length,
+          enabled: hosts.filter((h) => h.enabled).length,
+        });
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [connect]);
@@ -257,9 +273,9 @@ export function Dashboard() {
         />
         <StatusCard
           title="Proxy Hosts"
-          value="0"
-          subtitle="Active hosts"
-          status="info"
+          value={hostCount.total}
+          subtitle={`${hostCount.enabled} active`}
+          status={hostCount.enabled > 0 ? "success" : "info"}
           icon="🌐"
         />
         <StatusCard

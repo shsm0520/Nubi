@@ -36,6 +36,17 @@ go.work.sum
 # env file
 .env
 
+docker/
+Dockerfile
+docker-compose.yml
+hosts.example
+.dockerignore
+.env.example
+start-test.bat
+start-test.sh
+TESTING.md
+
+
 # Editor/IDE
 # .idea/
 # .vscode/

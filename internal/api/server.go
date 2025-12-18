@@ -16,6 +16,8 @@ type Server struct {
 	router             *gin.Engine
 	nginx              *nginx.Controller
 	defaultRoute       *nginx.DefaultRouteManager
+	proxyHosts         *nginx.ProxyHostManager
+	certManager        *nginx.CertificateManager
 	hub                *Hub
 	maintenanceMode    bool
 	maintenanceMessage string
@@ -30,6 +32,8 @@ func NewServer(ctrl *nginx.Controller, staticDir string) *Server {
 	router.Use(gin.Logger(), gin.Recovery())
 
 	defaultRoute, _ := nginx.NewDefaultRouteManager("")
+	proxyHosts, _ := nginx.NewProxyHostManager("", "", "")
+	certManager, _ := nginx.NewCertificateManager("/var/lib/nubi")
 	hub := NewHub()
 	go hub.Run()
 
@@ -37,6 +41,8 @@ func NewServer(ctrl *nginx.Controller, staticDir string) *Server {
 		router:       router,
 		nginx:        ctrl,
 		defaultRoute: defaultRoute,
+		proxyHosts:   proxyHosts,
+		certManager:  certManager,
 		hub:          hub,
 		startTime:    time.Now(),
 	}
@@ -61,6 +67,58 @@ func NewServer(ctrl *nginx.Controller, staticDir string) *Server {
 		routeAPI.DELETE("/default", srv.handleDeleteDefaultRoute)
 	}
 
+	// Proxy hosts API
+	hostsAPI := router.Group("/api/hosts")
+	{
+		hostsAPI.GET("", srv.handleListHosts)
+		hostsAPI.POST("", srv.handleCreateHost)
+		hostsAPI.GET("/export", srv.handleExportHosts)
+		hostsAPI.POST("/import", srv.handleImportHosts)
+		hostsAPI.GET("/:id", srv.handleGetHost)
+		hostsAPI.PUT("/:id", srv.handleUpdateHost)
+		hostsAPI.DELETE("/:id", srv.handleDeleteHost)
+		hostsAPI.POST("/:id/toggle", srv.handleToggleHost)
+		hostsAPI.POST("/:id/maintenance", srv.handleToggleMaintenance)
+	}
+
+	// Certificates API
+	certsAPI := router.Group("/api/certificates")
+	{
+		certsAPI.GET("", srv.handleListCertificates)
+		certsAPI.POST("", srv.handleUploadCertificate)
+		certsAPI.GET("/:id", srv.handleGetCertificate)
+		certsAPI.PUT("/:id", srv.handleUpdateCertificate)
+		certsAPI.DELETE("/:id", srv.handleDeleteCertificate)
+		certsAPI.POST("/bulk-apply", srv.handleBulkApplyCertificate)
+	}
+
+	// Tags API
+	tagsAPI := router.Group("/api/tags")
+	{
+		tagsAPI.GET("", srv.handleListTags)
+		tagsAPI.POST("", srv.handleCreateTag)
+		tagsAPI.PUT("/:id", srv.handleUpdateTag)
+		tagsAPI.DELETE("/:id", srv.handleDeleteTag)
+		tagsAPI.POST("/bulk-hosts", srv.handleBulkTagHosts)
+	}
+
+	// Let's Encrypt API
+	leAPI := router.Group("/api/letsencrypt")
+	{
+		leAPI.POST("/issue", srv.handleIssueLetsEncrypt)
+		leAPI.POST("/renew", srv.handleRenewLetsEncrypt)
+		leAPI.GET("/check-renewal", srv.handleCheckAutoRenew)
+		leAPI.GET("/dns-providers", srv.handleGetDNSProviders)
+	}
+
+	// Logs & Analytics API
+	logsAPI := router.Group("/api/logs")
+	{
+		logsAPI.GET("/stats", srv.handleGetLogStats)
+		logsAPI.GET("/recent", srv.handleGetRecentLogs)
+		logsAPI.GET("/live", srv.handleGetLiveLogs)
+	}
+
 	// Maintenance API
 	router.GET("/api/maintenance", srv.handleGetMaintenance)
 	router.POST("/api/maintenance", srv.handleSetMaintenance)
@@ -68,6 +126,8 @@ func NewServer(ctrl *nginx.Controller, staticDir string) *Server {
 	if staticDir != "" {
 		indexPath := filepath.Join(staticDir, "index.html")
 		router.StaticFile("/favicon.ico", filepath.Join(staticDir, "favicon.ico"))
+		router.StaticFile("/logo.svg", filepath.Join(staticDir, "logo.svg"))
+		router.StaticFile("/logo_text.svg", filepath.Join(staticDir, "logo_text.svg"))
 		router.StaticFS("/assets", gin.Dir(filepath.Join(staticDir, "assets"), true))
 
 		handleIndex := func(ctx *gin.Context) {
